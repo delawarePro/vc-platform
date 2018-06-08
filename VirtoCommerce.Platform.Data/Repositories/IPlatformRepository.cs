@@ -1,13 +1,16 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Security;
 using VirtoCommerce.Platform.Data.Model;
 
 namespace VirtoCommerce.Platform.Data.Repositories
 {
-	public interface IPlatformRepository : IRepository
+    public interface IPlatformRepository : IRepository
 	{
-		IQueryable<SettingEntity> Settings { get; }
+        IQueryable<AssetEntryEntity> AssetEntries { get; }
+
+        IQueryable<SettingEntity> Settings { get; }
 
         IQueryable<DynamicPropertyEntity> DynamicProperties { get; }
         IQueryable<DynamicPropertyDictionaryItemEntity> DynamicPropertyDictionaryItems { get; }
@@ -23,13 +26,14 @@ namespace VirtoCommerce.Platform.Data.Repositories
 
 		IQueryable<NotificationEntity> Notifications { get; }
 		IQueryable<NotificationTemplateEntity> NotificationTemplates { get; }
-
+		
+        AssetEntryEntity[] GetAssetsByIds(IEnumerable<string> ids);
         RoleEntity GetRoleById(string id);
 		AccountEntity GetAccountByName(string userName, UserDetails detailsLevel);
 		NotificationTemplateEntity GetNotificationTemplateByNotification(string notificationTypeId, string objectId, string objectTypeId, string language);
 		DynamicPropertyDictionaryItemEntity[] GetDynamicPropertyDictionaryItems(string propertyId);
 		DynamicPropertyEntity[] GetDynamicPropertiesByIds(string[] ids);
-		DynamicPropertyEntity[] GetDynamicPropertiesForType(string objectType);
+		DynamicPropertyEntity[] GetDynamicPropertiesForTypes(string[] objectTypes);
 		DynamicPropertyEntity[] GetObjectDynamicProperties(string[] objectTypes, string[] objectIds);
 
         SettingEntity GetSettingByName(string name);
