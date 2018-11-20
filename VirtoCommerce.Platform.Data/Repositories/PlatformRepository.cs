@@ -5,6 +5,7 @@ using System.Data.Entity;
 using System.Data.Entity.Infrastructure.Annotations;
 using System.Data.Entity.ModelConfiguration.Conventions;
 using System.Linq;
+using System.Threading.Tasks;
 using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Security;
 using VirtoCommerce.Platform.Data.Infrastructure;
@@ -64,6 +65,10 @@ namespace VirtoCommerce.Platform.Data.Repositories
                 .WithMany(x => x.SettingValues)
                 .HasForeignKey(x => x.SettingId);
 
+            modelBuilder.Entity<SettingValueEntity>()
+                .Property(x => x.DecimalValue)
+                .HasPrecision(18, 5);
+
             #endregion
 
             #region Dynamic Properties
@@ -97,6 +102,10 @@ namespace VirtoCommerce.Platform.Data.Repositories
                 .HasOptional(x => x.DictionaryItem)
                 .WithMany(x => x.ObjectValues)
                 .HasForeignKey(x => x.DictionaryItemId);
+
+            modelBuilder.Entity<DynamicPropertyObjectValueEntity>()
+                .Property(x => x.DecimalValue)
+                .HasPrecision(18, 5);
 
             modelBuilder.Entity<DynamicPropertyEntity>()
                 .Property(x => x.ObjectType)
@@ -233,7 +242,7 @@ namespace VirtoCommerce.Platform.Data.Repositories
                         .FirstOrDefault(x => x.Id == roleId);
         }
 
-        public AccountEntity GetAccountByName(string userName, UserDetails detailsLevel)
+        public async Task<AccountEntity> GetAccountByNameAsync(string userName, UserDetails detailsLevel)
         {
             var query = Accounts;
 
@@ -245,7 +254,7 @@ namespace VirtoCommerce.Platform.Data.Repositories
                     .Include(a => a.ApiAccounts);
             }
 
-            return query.FirstOrDefault(a => a.UserName == userName);
+            return await query.FirstOrDefaultAsync(a => a.UserName == userName);
         }
 
         public DynamicPropertyDictionaryItemEntity[] GetDynamicPropertyDictionaryItems(string propertyId)
@@ -281,10 +290,10 @@ namespace VirtoCommerce.Platform.Data.Repositories
             return retVal;
         }
 
-        public DynamicPropertyEntity[] GetDynamicPropertiesForType(string objectType)
+        public DynamicPropertyEntity[] GetDynamicPropertiesForTypes(string[] objectTypes)
         {
             var retVal = DynamicProperties.Include(p => p.DisplayNames)
-                                          .Where(p => p.ObjectType == objectType)
+                                          .Where(p => objectTypes.Contains(p.ObjectType))
                                           .OrderBy(p => p.Name)
                                           .ToArray();
             return retVal;

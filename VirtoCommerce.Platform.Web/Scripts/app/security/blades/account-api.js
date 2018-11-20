@@ -62,7 +62,7 @@
                 generateNewApiKey();
             },
             canExecuteMethod: function () {
-                return blade.currentEntity.apiAccountType === 'Hmac';
+                return blade.currentEntity && blade.currentEntity.apiAccountType === 'Hmac';
             },
             permission: blade.updatePermission
         },
@@ -104,8 +104,8 @@
                 angular.extend(blade.currentEntity, apiAccount);
                 blade.isLoading = false;
             }
-        }, function (error) {
-            bladeNavigationService.setError('Error ' + error.status, $scope.blade);
+        }, function (response) {
+            bladeNavigationService.setError(response, $scope.blade);
         });
     };
 
@@ -114,8 +114,8 @@
         accounts.generateNewApiKey({}, blade.currentEntity, function (apiAccount) {
             angular.copy(apiAccount, blade.currentEntity);
             blade.isLoading = false;
-        }, function (error) {
-            bladeNavigationService.setError('Error ' + error.status, $scope.blade);
+        }, function (response) {
+            bladeNavigationService.setError(response, $scope.blade);
         });
     }
 

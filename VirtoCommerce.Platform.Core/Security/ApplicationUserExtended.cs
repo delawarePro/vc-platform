@@ -1,14 +1,14 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using VirtoCommerce.Platform.Core.ChangeLog;
+using VirtoCommerce.Platform.Core.Common;
 
 namespace VirtoCommerce.Platform.Core.Security
 {
-    public class ApplicationUserExtended: IHasChangesHistory
+    public class ApplicationUserExtended : Entity, IHasChangesHistory
     {
-        public string Id { get; set; }
         public string UserName { get; set; }
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
@@ -54,6 +54,10 @@ namespace VirtoCommerce.Platform.Core.Security
         public AccountState UserState { get; set; }
 
         public string Password { get; set; }
+        /// <summary>
+        /// The flag indicates that user password is expired and must be changed
+        /// </summary>
+        public bool PasswordExpired { get; set; }
 
         public string PasswordHash { get; set; }
         public string SecurityStamp { get; set; }
