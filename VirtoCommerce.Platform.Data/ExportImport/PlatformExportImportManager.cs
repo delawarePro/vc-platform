@@ -25,6 +25,7 @@ namespace VirtoCommerce.Platform.Data.ExportImport
         {
             Users = new List<ApplicationUserExtended>();
             Settings = new List<SettingEntry>();
+            DynamicProperties = new List<DynamicProperty>();
             DynamicPropertyDictionaryItems = new List<DynamicPropertyDictionaryItem>();
             NotificationTemplates = new List<NotificationTemplate>();
             AssetEntries = new List<AssetEntry>();
@@ -321,6 +322,7 @@ namespace VirtoCommerce.Platform.Data.ExportImport
                         Action<ExportImportProgressInfo> modulePorgressCallback = (x) =>
                         {
                             progressInfo.Description = $"{moduleInfo.Id}: {x.Description}";
+                            progressInfo.Errors = x.Errors;
                             progressCallback(progressInfo);
                         };
                         try
@@ -353,6 +355,7 @@ namespace VirtoCommerce.Platform.Data.ExportImport
                     Action<ExportImportProgressInfo> modulePorgressCallback = (x) =>
                     {
                         progressInfo.Description = $"{module.Id}: {x.Description}";
+                        progressInfo.Errors = x.Errors;
                         progressCallback(progressInfo);
                     };
 

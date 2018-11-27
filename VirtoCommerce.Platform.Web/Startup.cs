@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Configuration;
 using System.Diagnostics;
 using System.Globalization;
@@ -23,6 +23,7 @@ using Microsoft.Owin;
 using Microsoft.Owin.Security;
 using Microsoft.Owin.Security.Cookies;
 using Microsoft.Owin.Security.DataProtection;
+using Microsoft.Owin.Security.OpenIdConnect;
 using Microsoft.Owin.StaticFiles;
 using Microsoft.Practices.Unity;
 using Owin;
@@ -177,12 +178,20 @@ namespace VirtoCommerce.Platform.Web
                 LoginPath = new PathString(ConfigurationHelper.GetAppSettingsValue("VirtoCommerce:Authentication:Cookie:LoginPath", string.Empty)),
                 LogoutPath = new PathString(ConfigurationHelper.GetAppSettingsValue("VirtoCommerce:Authentication:Cookie:LogoutPath", string.Empty)),
                 ReturnUrlParameter = ConfigurationHelper.GetAppSettingsValue("VirtoCommerce:Authentication:Cookie:ReturnUrlParameter", CookieAuthenticationDefaults.ReturnUrlParameter),
-                SlidingExpiration = ConfigurationHelper.GetAppSettingsValue("VirtoCommerce:Authentication:Cookie:SlidingExpiration", true)
+                SlidingExpiration = ConfigurationHelper.GetAppSettingsValue("VirtoCommerce:Authentication:Cookie:SlidingExpiration", true),
+
+                AzureAdAuthenticationEnabled = ConfigurationHelper.GetAppSettingsValue("VirtoCommerce:Authentication:AzureAD.Enabled", false),
+                AzureAdAuthenticationType = ConfigurationHelper.GetAppSettingsValue("VirtoCommerce:Authentication:AzureAD.AuthenticationType", OpenIdConnectAuthenticationDefaults.AuthenticationType),
+                AzureAdAuthenticationCaption = ConfigurationHelper.GetAppSettingsValue("VirtoCommerce:Authentication:AzureAD.Caption", OpenIdConnectAuthenticationDefaults.Caption),
+                AzureAdApplicationId = ConfigurationHelper.GetAppSettingsValue("VirtoCommerce:Authentication:AzureAD.ApplicationId", string.Empty),
+                AzureAdTenantId = ConfigurationHelper.GetAppSettingsValue("VirtoCommerce:Authentication:AzureAD.TenantId", string.Empty),
+                AzureAdInstance = ConfigurationHelper.GetAppSettingsValue("VirtoCommerce:Authentication:AzureAD.Instance", string.Empty),
+                AzureAdDefaultUserType = ConfigurationHelper.GetAppSettingsValue("VirtoCommerce:Authentication:AzureAD.DefaultUserType", "Manager")
             };
 
             container.RegisterInstance(authenticationOptions);
 
-            InitializePlatform(app, container, pathMapper, connectionString, hangfireLauncher, modulesPhysicalPath);
+            InitializePlatform(app, container, pathMapper, connectionString, hangfireLauncher, modulesPhysicalPath, moduleInitializerOptions);
 
             var moduleManager = container.Resolve<IModuleManager>();
             var moduleCatalog = container.Resolve<IModuleCatalog>();
@@ -320,25 +329,6 @@ namespace VirtoCommerce.Platform.Web
                 moduleManager.PostInitializeModule(module);
             }
 
-            var redisConnectionString = ConfigurationManager.ConnectionStrings["RedisConnectionString"];
-
-            // Redis
-            if (redisConnectionString != null && !string.IsNullOrEmpty(redisConnectionString.ConnectionString))
-            {
-                // Cache
-                RedisConfigurations.AddConfiguration(new RedisConfiguration("redisConnectionString", redisConnectionString.ConnectionString));
-
-                // SignalR
-                // https://stackoverflow.com/questions/29885470/signalr-scaleout-on-azure-rediscache-connection-issues
-                GlobalHost.DependencyResolver.UseRedis(new RedisScaleoutConfiguration(redisConnectionString.ConnectionString, "VirtoCommerce.Platform.SignalR"));
-            }
-
-            // SignalR 
-            var tempCounterManager = new TempPerformanceCounterManager();
-            GlobalHost.DependencyResolver.Register(typeof(IPerformanceCounterManager), () => tempCounterManager);
-            var hubConfiguration = new HubConfiguration { EnableJavaScriptProxies = false };
-            app.MapSignalR("/" + moduleInitializerOptions.RoutePrefix + "signalr", hubConfiguration);
-
             // Initialize InstrumentationKey from EnvironmentVariable
             var appInsightKey = Environment.GetEnvironmentVariable("APPINSIGHTS_INSTRUMENTATIONKEY");
 
@@ -367,7 +357,7 @@ namespace VirtoCommerce.Platform.Web
             return assembly;
         }
 
-        private static void InitializePlatform(IAppBuilder app, IUnityContainer container, IPathMapper pathMapper, string connectionString, HangfireLauncher hangfireLauncher, string modulesPath)
+        private static void InitializePlatform(IAppBuilder app, IUnityContainer container, IPathMapper pathMapper, string connectionString, HangfireLauncher hangfireLauncher, string modulesPath, ModuleInitializerOptions moduleInitializerOptions)
         {
             container.RegisterType<ICurrentUser, CurrentUser>(new HttpContextLifetimeManager());
             container.RegisterType<IUserNameResolver, UserNameResolver>();
@@ -638,10 +628,29 @@ namespace VirtoCommerce.Platform.Web
 
             #region Notifications
 
+            var redisConnectionString = ConfigurationManager.ConnectionStrings["RedisConnectionString"];
+
+            // Redis
+            if (redisConnectionString != null && !string.IsNullOrEmpty(redisConnectionString.ConnectionString))
+            {
+                // Cache
+                RedisConfigurations.AddConfiguration(new RedisConfiguration("redisConnectionString", redisConnectionString.ConnectionString));
+
+                // SignalR
+                // https://stackoverflow.com/questions/29885470/signalr-scaleout-on-azure-rediscache-connection-issues
+                GlobalHost.DependencyResolver.UseRedis(new RedisScaleoutConfiguration(redisConnectionString.ConnectionString, "VirtoCommerce.Platform.SignalR"));
+            }
+
+            // SignalR 
+            var tempCounterManager = new TempPerformanceCounterManager();
+            GlobalHost.DependencyResolver.Register(typeof(IPerformanceCounterManager), () => tempCounterManager);
+            var hubConfiguration = new HubConfiguration { EnableJavaScriptProxies = false };
+            app.MapSignalR("/" + moduleInitializerOptions.RoutePrefix + "signalr", hubConfiguration);
+
             var hubSignalR = GlobalHost.ConnectionManager.GetHubContext<ClientPushHub>();
             var notifier = new InMemoryPushNotificationManager(hubSignalR);
             container.RegisterInstance<IPushNotificationManager>(notifier);
-
+            
             var resolver = new LiquidNotificationTemplateResolver();
             container.RegisterInstance<INotificationTemplateResolver>(resolver);
 
@@ -733,7 +742,7 @@ namespace VirtoCommerce.Platform.Web
 
             container.RegisterType<ISecurityService, SecurityService>();
 
-
+            container.RegisterType<IPasswordCheckService, PasswordCheckService>();
 
             #endregion
 
