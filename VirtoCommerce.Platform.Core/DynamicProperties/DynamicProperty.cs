@@ -1,11 +1,12 @@
-﻿using System.Linq;
+using System;
+using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using VirtoCommerce.Platform.Core.Common;
 
 namespace VirtoCommerce.Platform.Core.DynamicProperties
 {
-    public class DynamicProperty : AuditableEntity
+    public class DynamicProperty : AuditableEntity, ICloneable
     {
         public string Name { get; set; }
         /// <summary>
@@ -41,26 +42,32 @@ namespace VirtoCommerce.Platform.Core.DynamicProperties
             return string.Format("{0}", Name ?? "n/a");
         }
 
-        public DynamicProperty Clone()
+        public virtual object Clone()
         {
-            return new DynamicProperty
-            {
-                Id = Id,
-                CreatedDate = CreatedDate,
-                ModifiedDate = ModifiedDate,
-                CreatedBy = CreatedBy,
-                ModifiedBy = ModifiedBy,
-                Name = Name,
-                Description = Description,
-                ObjectType = ObjectType,
-                IsArray = IsArray,
-                IsDictionary = IsDictionary,
-                IsMultilingual = IsMultilingual,
-                IsRequired = IsRequired,
-                DisplayOrder = DisplayOrder,
-                ValueType = ValueType,
-                DisplayNames = DisplayNames == null ? null : DisplayNames.Select(n => n.Clone()).ToArray(),
-            };
+            var dynamicProperty = new DynamicProperty();
+
+            Copy(dynamicProperty);
+
+            return dynamicProperty;
+        }
+
+        public void Copy(DynamicProperty property)
+        {
+            property.Id = Id;
+            property.CreatedDate = CreatedDate;
+            property.ModifiedDate = ModifiedDate;
+            property.CreatedBy = CreatedBy;
+            property.ModifiedBy = ModifiedBy;
+            property.Name = Name;
+            property.Description = Description;
+            property.ObjectType = ObjectType;
+            property.IsArray = IsArray;
+            property.IsDictionary = IsDictionary;
+            property.IsMultilingual = IsMultilingual;
+            property.IsRequired = IsRequired;
+            property.DisplayOrder = DisplayOrder;
+            property.ValueType = ValueType;
+            property.DisplayNames = DisplayNames == null ? null : DisplayNames.Select(n => n.Clone()).ToArray();
         }
     }
 }
